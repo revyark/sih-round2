@@ -8,7 +8,9 @@ const ReportedSitesPage = () => {
     useEffect(() => {
         const fetchVerifiedReports = async () => {
             try {
-                const response = await fetch('http://localhost:8000/verifiedReports');
+                const response = await fetch('http://localhost:8000/verifiedReports', {
+                    credentials: 'include'
+                });
                 if (!response.ok) {
                     throw new Error('Failed to fetch verified reports');
                 }

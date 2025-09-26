@@ -23,6 +23,7 @@ const ReportSitePage = ({ account, onReportSite }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ url, userWallet: account }),
             });
             if (!response.ok) {

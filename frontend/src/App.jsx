@@ -69,7 +69,7 @@ export default function App() {
             case 'scanurl': return <ScanUrlPage />;
             case 'reportasite': return <ReportSitePage account={account} onReportSite={handleReportSite} />;
             case 'reportedsites': return <ReportedSitesPage />;
-            case 'admindashboard': return <AdminDashboardPage reportedSites={reportedSites} onDismissReport={handleDismissReport} />;
+            case 'admindashboard': return <AdminDashboardPage />;
             default: return <HomePage setPage={setPage} />;
         }
     }
