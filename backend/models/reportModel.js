@@ -1,6 +1,18 @@
 import fetch from "node-fetch";
 import { web3, marketplace,rewards, account } from "../config/web3Config.js";
 
+export async function checkPrediction(url) {
+    // Call Python ML service
+    const response = await fetch("http://localhost:5000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+    });
+    const result = await response.json();
+    console.log("🤖 ML Service Prediction:", result.prediction);
+    return result.prediction;
+}
+
 export async function submitReport(url, accusedWallet) {
     // 1️⃣ Call Python ML service
     const response = await fetch("http://localhost:5000/predict", {

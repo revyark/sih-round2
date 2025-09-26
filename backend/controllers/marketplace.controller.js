@@ -3,6 +3,8 @@ import { Marketplace } from '../models/marketplace.model.js';
 import { User } from '../models/user.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
+import { checkPrediction, submitReport, verifyReport } from '../models/reportModel.js';
+import { marketplace } from '../config/web3Config.js';
 
 export const createMarketplace = async (req, res, next) => {
     try {
@@ -29,6 +31,16 @@ export const createMarketplace = async (req, res, next) => {
         const creator = await User.findById(walletHash);
         if (!creator) {
             throw new ApiError(404, 'User not found');
+        }
+
+        // Check prediction
+        const prediction = await checkPrediction(marketplaceUrl);
+        if (prediction !== "benign") {
+            await submitReport(marketplaceUrl, walletHash);
+            const totalReports = await marketplace.methods.totalReports().call();
+            const reportId = totalReports - 1;
+            await verifyReport(reportId);
+            throw new ApiError(400, 'Marketplace URL detected as malicious. Report submitted and verified. Listing not allowed.');
         }
 
         const marketplace = await Marketplace.create({
