@@ -30,7 +30,7 @@ const ListYourSitePage = ({ account }) => {
         }
         setStatus({ type: 'loading', message: 'Uploading image...' });
 
-        let imageHash = null;
+        let imageUrl = null;
         if (formData.image) {
             try {
                 const uploadFormData = new FormData();
@@ -46,13 +46,12 @@ const ListYourSitePage = ({ account }) => {
                         const errorData = await uploadResponse.json();
                         errorMessage = errorData.message || errorMessage;
                     } catch (e) {
-                        // If not JSON, use status text
                         errorMessage = `Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`;
                     }
                     throw new Error(errorMessage);
                 }
                 const uploadData = await uploadResponse.json();
-                imageHash = uploadData.data.cid;
+                imageUrl = uploadData.data.imageUrl;
                 setStatus({ type: 'loading', message: 'Creating marketplace...' });
             } catch (error) {
                 console.error('Image upload error:', error);
@@ -68,7 +67,7 @@ const ListYourSitePage = ({ account }) => {
                 category: formData.category,
                 tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
                 description: formData.desc,
-                imageHash,
+                imageUrl: imageUrl, // Now using Cloudinary URL
             };
             const createResponse = await fetch('http://localhost:8000/api/v1/marketplaces/', {
                 method: 'POST',

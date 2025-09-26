@@ -18,16 +18,16 @@ const marketplaceSchema = new Schema(
         },
         category: {
             type: String,
-            enum: ['NFTs', 'Defi', 'gaming', 'others'],
+            enum: ['nfts', 'defi', 'gaming', 'other'],
             required: true
         },
         tags: {
             type: [String],
             default: []
         },
-        imageHash: {
+        imageUrl: {
             type: String,
-            required: true,
+            required: false,
             trim: true
         },
         description: {
