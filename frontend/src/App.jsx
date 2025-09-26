@@ -67,8 +67,8 @@ export default function App() {
             case 'home': return <HomePage setPage={setPage} />;
             case 'listyoursite': return <ListYourSitePage account={account} />;
             case 'scanurl': return <ScanUrlPage />;
-            case 'reportasite': return <ReportSitePage onReportSite={handleReportSite} />;
-            case 'reportedsites': return <ReportedSitesPage reportedSites={reportedSites} />;
+            case 'reportasite': return <ReportSitePage account={account} onReportSite={handleReportSite} />;
+            case 'reportedsites': return <ReportedSitesPage />;
             case 'admindashboard': return <AdminDashboardPage reportedSites={reportedSites} onDismissReport={handleDismissReport} />;
             default: return <HomePage setPage={setPage} />;
         }
