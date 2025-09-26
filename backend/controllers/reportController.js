@@ -1,8 +1,23 @@
 import { submitUserReport as submitUserReportModel, submitReport as submitReportModel, getReports as getReportsModel, getVerifiedReports as getVerifiedReportsModel, getUserReports as getUserReportsModel, verifyReport as verifyReportModel } from '../models/reportModel.js';
 import safeJson from '../utils/safeJson.js';
+import jwt from 'jsonwebtoken';
+import { ApiError } from '../utils/ApiError.js';
 
 export async function submitReport(req, res) {
     try {
+        // Auth check
+        const token = req.cookies?.accessToken || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+        if (!token) {
+            throw new ApiError(401, 'Unauthorized');
+        }
+        let walletHash;
+        try {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            walletHash = decoded.sub;
+        } catch (err) {
+            throw new ApiError(401, 'Invalid or expired token');
+        }
+
         const { url, accusedWallet } = req.body;
 
         console.log("🌐 Received report request for URL:", url);
@@ -12,11 +27,24 @@ export async function submitReport(req, res) {
         res.json(result);
     } catch (err) {
         console.error("❌ Error submitting report:", err);
-        res.status(500).json({ error: err.toString() });
+        res.status(err.statusCode || 500).json({ error: err.message || err.toString() });
     }
 }
 export async function submitUserReport(req, res) {
-    try{        
+    try {
+        // Auth check
+        const token = req.cookies?.accessToken || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+        if (!token) {
+            throw new ApiError(401, 'Unauthorized');
+        }
+        let walletHash;
+        try {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            walletHash = decoded.sub;
+        } catch (err) {
+            throw new ApiError(401, 'Invalid or expired token');
+        }
+
         const { url, userWallet } = req.body;
         console.log("🌐 Received user report request for URL:", url);
         console.log("👤 User Wallet:", userWallet);
@@ -24,7 +52,7 @@ export async function submitUserReport(req, res) {
         res.json(result);
     } catch (err) {
         console.error("❌ Error submitting user report:", err);
-        res.status(500).json({ error: err.toString() });
+        res.status(err.statusCode || 500).json({ error: err.message || err.toString() });
     }
 }
 

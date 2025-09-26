@@ -1,12 +1,28 @@
 import jwt from 'jsonwebtoken';
-import { uploadToPinata, getPinataFileUrl, deleteFromPinata } from '../utils/pinata.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 
-/**
- * Upload image to Pinata IPFS
- * POST /api/upload/image
- */
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'website_images',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        transformation: [{ width: 800, height: 600, crop: 'limit' }],
+    },
+});
+
+export const upload = multer({ storage });
+
 export const uploadImage = async (req, res, next) => {
     try {
         // Check authentication
@@ -14,7 +30,6 @@ export const uploadImage = async (req, res, next) => {
         if (!token) {
             throw new ApiError(401, 'Unauthorized');
         }
-
         let walletHash;
         try {
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -28,42 +43,15 @@ export const uploadImage = async (req, res, next) => {
             throw new ApiError(400, 'No image file provided');
         }
 
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        if (!allowedTypes.includes(req.file.mimetype)) {
-            throw new ApiError(400, 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed');
-        }
-
-        // Validate file size (5MB limit)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (req.file.size > maxSize) {
-            throw new ApiError(400, 'File size too large. Maximum size is 5MB');
-        }
-
-        // Prepare metadata
-        const metadata = {
-            name: req.file.originalname,
-            description: `Image uploaded by user ${walletHash}`,
-            keyvalues: {
-                uploadedBy: walletHash,
-                uploadDate: new Date().toISOString(),
-                originalName: req.file.originalname
-            }
-        };
-
-        // Create File object from buffer for Pinata
-        const file = new File([req.file.buffer], req.file.originalname, { type: req.file.mimetype });
-
-        // Upload to Pinata
-        const uploadResult = await uploadToPinata(file, metadata);
+        // File info from multer-storage-cloudinary
+        const { path: imageUrl, originalname, mimetype, size } = req.file;
 
         return res.status(200).json(new ApiResponse(200, {
-            cid: uploadResult.cid,
-            ipfsUrl: uploadResult.ipfsUrl,
-            size: uploadResult.size,
-            originalName: req.file.originalname
-        }, 'Image uploaded successfully to IPFS'));
-
+            imageUrl,
+            size,
+            originalName: originalname,
+            mimetype
+        }, 'Image uploaded successfully to Cloudinary'));
     } catch (error) {
         next(error);
     }

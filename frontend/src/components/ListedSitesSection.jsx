@@ -1,29 +1,78 @@
-import { useState } from 'react';
-import { initialMockMarketplaces } from '../data/mockData';
+import { useState, useEffect } from 'react';
 import ListedSiteCard from './ListedSiteCard';
 import MarketplacesFilters from './MarketplacesFilters';
 
 const ListedSitesSection = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('all');
+    const [marketplaces, setMarketplaces] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const filteredMarketplaces = initialMockMarketplaces.filter(market => {
+    // Fetch user's marketplaces
+    const fetchMyMarketplaces = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('http://localhost:8000/api/v1/marketplaces/my', {
+                method: 'GET',
+                credentials: 'include',
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch marketplaces');
+            }
+            
+            const data = await response.json();
+            setMarketplaces(data.data.marketplaces || []);
+        } catch (err) {
+            console.error('Error fetching marketplaces:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMyMarketplaces();
+    }, []);
+
+    // Handle discard marketplace
+    const handleDiscard = async (marketplaceId) => {
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/marketplaces/${marketplaceId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to discard marketplace');
+            }
+            
+            // Refresh the list after successful deletion
+            await fetchMyMarketplaces();
+        } catch (err) {
+            console.error('Error discarding marketplace:', err);
+            setError(err.message);
+        }
+    };
+
+    const filteredMarketplaces = marketplaces.filter(market => {
         const matchesSearch = market.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               market.description.toLowerCase().includes(searchTerm.toLowerCase());
         let matchesFilter = selectedFilter === 'all';
         if (!matchesFilter) {
             switch (selectedFilter) {
                 case 'nfts':
-                    matchesFilter = market.tags.includes('NFTs');
+                    matchesFilter = market.category === 'nfts';
                     break;
                 case 'defi':
-                    matchesFilter = market.tags.includes('Finance');
+                    matchesFilter = market.category === 'defi';
                     break;
                 case 'gaming':
-                    matchesFilter = market.tags.includes('Gaming');
+                    matchesFilter = market.category === 'gaming';
                     break;
                 case 'other':
-                    matchesFilter = !market.tags.some(tag => ['nfts', 'finance', 'gaming'].includes(tag));
+                    matchesFilter = market.category === 'other';
                     break;
                 default:
                     matchesFilter = false;
@@ -43,9 +92,13 @@ const ListedSitesSection = () => {
 
             {/* Marketplaces Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {filteredMarketplaces.length > 0 ? (
+                {loading ? (
+                    <p className="col-span-full text-center text-gray-400">Loading your marketplaces...</p>
+                ) : error ? (
+                    <p className="col-span-full text-center text-red-400">Error: {error}</p>
+                ) : filteredMarketplaces.length > 0 ? (
                     filteredMarketplaces.map(market => (
-                        <ListedSiteCard key={market.id} market={market} />
+                        <ListedSiteCard key={market._id} market={market} onDiscard={handleDiscard} />
                     ))
                 ) : (
                     <p className="col-span-full text-center text-gray-400">No sites listed yet.</p>
