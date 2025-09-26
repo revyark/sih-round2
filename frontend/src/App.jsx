@@ -24,8 +24,7 @@ export default function App() {
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 if (accounts.length > 0) {
-                    setAccount(accounts[0]);
-                    // Integrate with backend API
+                    // Integrate with backend API first
                     try {
                         const response = await fetch('http://localhost:8000/api/v1/auth/connect-wallet', {
                             method: 'POST',
@@ -35,15 +34,27 @@ export default function App() {
                             body: JSON.stringify({ walletAddress: accounts[0] }),
                             credentials: 'include',
                         });
+
+                        const payload = await response.json().catch(() => ({}));
+
                         if (!response.ok) {
-                            throw new Error('Failed to connect wallet on backend');
+                            const message = payload?.message || 'Failed to connect wallet on backend';
+                            if (response.status === 403) {
+                                alert(message || 'This wallet is banned and cannot be connected.');
+                            } else {
+                                console.error('Backend connect error:', message);
+                                alert(message);
+                            }
+                            return; // Do not set account or navigate
                         }
-                        const data = await response.json();
-                        console.log('Wallet connected to backend:', data);
+
+                        console.log('Wallet connected to backend:', payload);
+                        setAccount(accounts[0]);
+                        setPage('listyoursite');
                     } catch (apiError) {
                         console.error('Error connecting wallet to backend:', apiError);
+                        alert('Unable to connect wallet. Please try again later.');
                     }
-                    setPage('listyoursite');
                 }
             } catch (error) {
                 console.error("User rejected request", error);

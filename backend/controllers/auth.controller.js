@@ -17,7 +17,7 @@ export const connectWallet = async (req, res, next) => {
             throw new ApiError(400, 'walletAddress is required');
         }
 
-        const normalized = walletAddress.trim();
+        const normalized = walletAddress.trim().toLowerCase();
 
         let user = await User.findById(normalized);
         if (user) {

@@ -43,6 +43,10 @@ const UserSchema = new Schema(
 
 // Ensure walletAddress mirrors _id for convenience
 UserSchema.pre('validate', function(next) {
+    // Normalize to lowercase for consistent identity
+    if (this._id) this._id = this._id.toString().trim().toLowerCase();
+    if (this.walletAddress) this.walletAddress = this.walletAddress.toString().trim().toLowerCase();
+
     if (!this._id && this.walletAddress) {
         this._id = this.walletAddress;
     }

@@ -3,10 +3,9 @@ import { web3, marketplace,rewards, account } from "../config/web3Config.js";
 
 export async function checkPrediction(url) {
     // Call Python ML service
-    const response = await fetch("http://localhost:5000/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+    const response = await fetch(`https://phishing-detection-production-983e.up.railway.app/predict?url=${encodeURIComponent(url)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
     });
     const result = await response.json();
     console.log("🤖 ML Service Prediction:", result.prediction);
@@ -15,16 +14,15 @@ export async function checkPrediction(url) {
 
 export async function submitReport(url, accusedWallet) {
     // 1️⃣ Call Python ML service
-    const response = await fetch("http://localhost:5000/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+    const response = await fetch(`https://phishing-detection-production-983e.up.railway.app/predict?url=${encodeURIComponent(url)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
     });
     const result = await response.json();
     console.log("🤖 ML Service Prediction:", result.prediction);
 
     // 2️⃣ Check if prediction is not benign before submitting to blockchain
-    if (result.prediction === "benign") {
+    if (result.prediction === "Safe") {
         console.log("🛡️ Report classified as benign - skipping blockchain submission");
         return {
             message: "Report classified as benign - no blockchain submission required",

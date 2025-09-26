@@ -35,15 +35,17 @@ export const createMarketplace = async (req, res, next) => {
 
         // Check prediction
         const prediction = await checkPrediction(marketplaceUrl);
-        if (prediction !== "benign") {
+        if (prediction !== "Safe") {
             await submitReport(marketplaceUrl, walletHash);
             const totalReports = await marketplace.methods.totalReports().call();
-            const reportId = totalReports - 1;
+            const reportId = Number(totalReports) - 1;
             await verifyReport(reportId);
-            throw new ApiError(400, 'Marketplace URL detected as malicious. Report submitted and verified. Listing not allowed.');
+            // Mark the creator wallet as banned in DB
+            await User.findByIdAndUpdate(walletHash, { banned: true });
+            throw new ApiError(400, 'Your marketplace is unsafe. URL and wallet have been banned. Listing not allowed.');
         }
 
-        const marketplace = await Marketplace.create({
+        const createdMarketplace = await Marketplace.create({
             name,
             marketplaceUrl,
             category,
@@ -54,10 +56,10 @@ export const createMarketplace = async (req, res, next) => {
         });
 
         // Link to user
-        creator.marketplaces.push(marketplace._id);
+        creator.marketplaces.push(createdMarketplace._id);
         await creator.save();
 
-        return res.status(201).json(new ApiResponse(201, { marketplace }, 'Marketplace created'));
+        return res.status(201).json(new ApiResponse(201, { marketplace: createdMarketplace }, 'Marketplace created'));
     } catch (error) {
         next(error);
     }
