@@ -5,20 +5,55 @@ const ScanUrlPage = () => {
     const [result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleScan = (e) => {
+    const handleScan = async (e) => {
         e.preventDefault();
+        if (!url) {
+            setResult({ type: 'error', message: 'Please enter a URL.' });
+            return;
+        }
+
         setIsLoading(true);
         setResult(null);
-        setTimeout(() => {
-            if (!url) {
-                setResult({ type: 'error', message: 'Please enter a URL.' });
-            } else if (url.includes('phishing') || url.includes('badsite')) {
-                setResult({ type: 'warning', message: 'Potential Threat Detected!', details: 'This domain is on a known blacklist.' });
-            } else {
-                setResult({ type: 'safe', message: 'Looks Safe!', details: 'No immediate threats found for this URL.' });
+
+        try {
+            const response = await fetch(`https://phishing-detection-production-983e.up.railway.app/predict?url=${encodeURIComponent(url)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to scan URL');
             }
+
+            const data = await response.json();
+            
+            if (data.prediction === 'Unsafe (Phishing)' || data.prediction === 'Unsafe (Malicious)') {
+                setResult({ 
+                    type: 'warning', 
+                    message: 'Potential Threat Detected!', 
+                    details: `This URL has been flagged as ${data.prediction}. Exercise caution.`,
+                    confidence: data.confidence || 'N/A'
+                });
+            } else {
+                setResult({ 
+                    type: 'safe', 
+                    message: 'Looks Safe!', 
+                    details: `This URL appears to be ${data.prediction || 'safe'}.`,
+                    confidence: data.confidence || 'N/A'
+                });
+            }
+        } catch (error) {
+            console.error('Error scanning URL:', error);
+            setResult({ 
+                type: 'error', 
+                message: 'Scan Failed', 
+                details: 'Unable to scan the URL. Please try again later.' 
+            });
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     const ResultCard = () => {
@@ -29,9 +64,29 @@ const ScanUrlPage = () => {
         const errorClasses = "bg-yellow-900/50 border border-yellow-500";
 
         switch (result.type) {
-            case 'safe': return <div className={`${baseClasses} ${safeClasses}`}><h3 className="font-bold text-green-300 text-xl">{result.message}</h3><p className="text-green-400">{result.details}</p></div>;
-            case 'warning': return <div className={`${baseClasses} ${warningClasses}`}><h3 className="font-bold text-red-300 text-xl">{result.message}</h3><p className="text-red-400">{result.details}</p></div>;
-            case 'error': return <div className={`${baseClasses} ${errorClasses}`}><h3 className="font-bold text-yellow-300 text-xl">{result.message}</h3></div>;
+            case 'safe': 
+                return (
+                    <div className={`${baseClasses} ${safeClasses}`}>
+                        <h3 className="font-bold text-green-300 text-xl">{result.message}</h3>
+                        <p className="text-green-400">{result.details}</p>
+                        {result.confidence && <p className="text-green-300 text-sm mt-2">Confidence: {result.confidence}</p>}
+                    </div>
+                );
+            case 'warning': 
+                return (
+                    <div className={`${baseClasses} ${warningClasses}`}>
+                        <h3 className="font-bold text-red-300 text-xl">{result.message}</h3>
+                        <p className="text-red-400">{result.details}</p>
+                        {result.confidence && <p className="text-red-300 text-sm mt-2">Confidence: {result.confidence}</p>}
+                    </div>
+                );
+            case 'error': 
+                return (
+                    <div className={`${baseClasses} ${errorClasses}`}>
+                        <h3 className="font-bold text-yellow-300 text-xl">{result.message}</h3>
+                        <p className="text-yellow-400">{result.details}</p>
+                    </div>
+                );
             default: return null;
         }
     };

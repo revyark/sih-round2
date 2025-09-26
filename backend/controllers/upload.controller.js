@@ -23,6 +23,34 @@ const storage = new CloudinaryStorage({
 
 export const upload = multer({ storage });
 
+export const scanUrl = async (req, res, next) => {
+    try {
+        const { url } = req.query;
+        
+        if (!url) {
+            return res.status(400).json(new ApiResponse(400, null, 'URL parameter is required'));
+        }
+
+        const response = await fetch(`https://phishing-detection-production-983e.up.railway.app/predict?url=${encodeURIComponent(url)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to scan URL');
+        }
+
+        const data = await response.json();
+        
+        return res.status(200).json(new ApiResponse(200, data, 'URL scanned successfully'));
+    } catch (error) {
+        console.error('URL scan error:', error);
+        next(error);
+    }
+};
+
 export const uploadImage = async (req, res, next) => {
     try {
         // Check authentication
