@@ -107,34 +107,102 @@ export async function getReports() {
     return { totalReports: total, reports };
 }
 
+export async function getVerifiedReports() {
+    const total = await marketplace.methods.totalReports().call();
+
+    const statusMap = ["Reported", "Verified", "Rejected"];
+    const reports = [];
+
+    for (let i = 0; i < total; i++) {
+        const r = await marketplace.methods.getReport(i).call();
+        const report = {
+            id: i,
+            domain: r.domain,
+            accusedWallet: r.accusedWallet,
+            reporter: r.reporter,
+            evidenceHash: r.evidenceHash,
+            timestamp: r.timestamp,
+            status: statusMap[Number(r.status)]
+        };
+        if (report.status === "Verified") {
+            reports.push(report);
+        }
+    }
+
+    return { totalReports: reports.length, reports };
+}
+
+export async function getUserReports() {
+    const total = await marketplace.methods.totalReports().call();
+
+    const statusMap = ["Reported", "Verified", "Rejected"];
+    const reports = [];
+
+    for (let i = 0; i < total; i++) {
+        const r = await marketplace.methods.getReport(i).call();
+        const report = {
+            id: i,
+            domain: r.domain,
+            accusedWallet: r.accusedWallet,
+            reporter: r.reporter,
+            evidenceHash: r.evidenceHash,
+            timestamp: r.timestamp,
+            status: statusMap[Number(r.status)]
+        };
+        if (report.status !== "Verified") {
+            reports.push(report);
+        }
+    }
+
+    return { totalReports: reports.length, reports };
+}
+
 export async function verifyReport(reportId) {
     // 1️⃣ Get report from Marketplace
     const report = await marketplace.methods.getReport(reportId).call();
     const url = report.domain;
     const accusedWallet = report.accusedWallet;
 
-    // 2️⃣ Generate consistent evidenceHash (same as submitUserReport)
-    // JS: consistent evidence hash for both functions
+    // 2️⃣ Generate evidenceHash (consistent with submitUserReport)
     const evidenceHash = web3.utils.padRight(web3.utils.asciiToHex(url), 64);
+
+    await marketplace.methods
+  .setRewardsContract(process.env.REWARDS_ADDRESS)
+  .send({ from: account.address });
+
+    console.log("Rewards in Marketplace:", await marketplace.methods.rewardsContract().call());
 
     console.log("Contract owner:", await marketplace.methods.owner().call());
     console.log("Backend wallet:", account.address);
     console.log("Report URL:", url);
     console.log("Accused Wallet:", accusedWallet);
     console.log("Evidence Hash:", evidenceHash);
+    console.log("Owner in Marketplace:", await marketplace.methods.owner().call());
+    console.log("Rewards in Marketplace:", await marketplace.methods.rewardsContract().call());
+    console.log("Backend wallet calling:", account.address);
 
-    // 3️⃣ Flag threat → bans domain & wallet (if exists) + rewards reporters
+    // 3️⃣ Flag threat → bans domain & wallet (if exists) + rewards reporter
     const reason = "Verified by admin";
-    const tx = await rewards.methods
+    const tx1 = await rewards.methods
         .flagThreat(accusedWallet, url, evidenceHash, reason)
         .send({ from: account.address });
 
     console.log("🚫 URL & Wallet flagged successfully");
-    console.log("Tx Hash:", tx.transactionHash);
+    console.log("Tx1 Hash:", tx1.transactionHash);
+    
+   
+
+    // 4️⃣ Change status → Verified in Marketplace contract
+    const tx2 = await marketplace.methods
+        .verifyReport(reportId)
+        .send({ from: account.address });
+
+    console.log("✅ Report marked as Verified in Marketplace");
+    console.log("Tx2 Hash:", tx2.transactionHash);
 
     return {
         message: `Report ${reportId} marked as Verified`,
-        txHash: tx.transactionHash
+        txReward: tx1.transactionHash,
+        txStatusUpdate: tx2.transactionHash
     };
 }
-

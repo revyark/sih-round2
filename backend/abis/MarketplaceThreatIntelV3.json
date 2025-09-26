@@ -16,6 +16,31 @@
         {
           "indexed": true,
           "internalType": "address",
+          "name": "moderator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "ReportRejected",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
           "name": "reporter",
           "type": "address"
         },
@@ -27,6 +52,25 @@
         }
       ],
       "name": "ReportSubmitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "moderator",
+          "type": "address"
+        }
+      ],
+      "name": "ReportVerified",
       "type": "event"
     },
     {
@@ -241,12 +285,12 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum MarketplaceThreatIntelV3.Status",
+              "internalType": "enum MarketplaceThreatIntelV4.Status",
               "name": "status",
               "type": "uint8"
             }
           ],
-          "internalType": "struct MarketplaceThreatIntelV3.Report",
+          "internalType": "struct MarketplaceThreatIntelV4.Report",
           "name": "",
           "type": "tuple"
         }
@@ -309,6 +353,24 @@
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "reportId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "rejectReport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "",
           "type": "uint256"
         }
@@ -341,7 +403,7 @@
           "type": "uint256"
         },
         {
-          "internalType": "enum MarketplaceThreatIntelV3.Status",
+          "internalType": "enum MarketplaceThreatIntelV4.Status",
           "name": "status",
           "type": "uint8"
         }
@@ -421,5 +483,18 @@
       ],
       "stateMutability": "view",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reportId",
+          "type": "uint256"
+        }
+      ],
+      "name": "verifyReport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
-]
+  ]

@@ -1,4 +1,4 @@
-import { submitUserReport as submitUserReportModel, submitReport as submitReportModel, getReports as getReportsModel, verifyReport as verifyReportModel } from '../models/reportModel.js';
+import { submitUserReport as submitUserReportModel, submitReport as submitReportModel, getReports as getReportsModel, getVerifiedReports as getVerifiedReportsModel, getUserReports as getUserReportsModel, verifyReport as verifyReportModel } from '../models/reportModel.js';
 import safeJson from '../utils/safeJson.js';
 
 export async function submitReport(req, res) {
@@ -34,6 +34,26 @@ export async function getReports(req, res) {
         res.send(safeJson(data));
     } catch (err) {
         console.error("❌ Error fetching reports:", err);
+        res.status(500).json({ error: err.toString() });
+    }
+}
+
+export async function getVerifiedReports(req, res) {
+    try {
+        const data = await getVerifiedReportsModel();
+        res.send(safeJson(data));
+    } catch (err) {
+        console.error("❌ Error fetching verified reports:", err);
+        res.status(500).json({ error: err.toString() });
+    }
+}
+
+export async function getUserReports(req, res) {
+    try {
+        const data = await getUserReportsModel();
+        res.send(safeJson(data));
+    } catch (err) {
+        console.error("❌ Error fetching user reports:", err);
         res.status(500).json({ error: err.toString() });
     }
 }
