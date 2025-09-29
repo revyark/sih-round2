@@ -55,3 +55,28 @@ export const connectWallet = async (req, res, next) => {
 };
 
 
+export const setWalletBan = async (req, res, next) => {
+    try {
+        const { walletAddress, banned } = req.body;
+
+        if (!walletAddress || typeof walletAddress !== 'string') {
+            throw new ApiError(400, 'walletAddress is required');
+        }
+
+        const normalized = walletAddress.trim().toLowerCase();
+        const bannedFlag = banned === undefined ? true : Boolean(banned);
+
+        const user = await User.findByIdAndUpdate(
+            normalized,
+            { banned: bannedFlag, walletAddress: normalized },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+        );
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, { user }, bannedFlag ? 'Wallet banned' : 'Wallet unbanned'));
+    } catch (error) {
+        next(error);
+    }
+};
+

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { connectWallet } from '../controllers/auth.controller.js';
+import { connectWallet, setWalletBan } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -8,6 +8,7 @@ router.get('/ping', (req, res) => {
 });
 
 router.route('/connect-wallet').post(connectWallet);
+router.route('/set-wallet-ban').post(setWalletBan);
 
 export default router;
 

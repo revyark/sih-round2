@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { web3, marketplace,rewards, account } from "../config/web3Config.js";
+import { User } from "./user.model.js";
 
 export async function checkPrediction(url) {
     // Call Python ML service
@@ -52,6 +53,16 @@ export async function submitReport(url, accusedWallet) {
     
     console.log("🚫 Is Accused Wallet Banned?:", tx2);
     console.log("🚫 Is Accused Url Banned?:", tx3);
+
+    // 5️⃣ If wallet is banned on-chain, reflect in DB
+    try {
+        if (tx2 && accusedWallet && accusedWallet !== "0x0000000000000000000000000000000000000000") {
+            const normalized = accusedWallet.toString().trim().toLowerCase();
+            await User.findByIdAndUpdate(normalized, { banned: true });
+        }
+    } catch (e) {
+        console.error("⚠️ Failed to update banned flag in DB for accused wallet:", e);
+    }
     return {
         message: "Report submitted successfully",
         txHash: tx.transactionHash,
@@ -199,6 +210,15 @@ export async function verifyReport(reportId) {
 
     console.log("🚫 URL & Wallet flagged successfully");
     console.log("Tx1 Hash:", tx1.transactionHash);
+    // Reflect ban in DB for accused wallet
+    try {
+        if (accusedWallet && accusedWallet !== "0x0000000000000000000000000000000000000000") {
+            const normalized = accusedWallet.toString().trim().toLowerCase();
+            await User.findByIdAndUpdate(normalized, { banned: true });
+        }
+    } catch (e) {
+        console.error("⚠️ Failed to update banned flag in DB during verifyReport:", e);
+    }
     
    
 
